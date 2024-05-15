@@ -33,6 +33,7 @@ from tap_mysql.sync_strategies import common
 LOGGER = singer.get_logger('tap_mysql')
 
 SDC_DELETED_AT = "_sdc_deleted_at"
+IS_DELETED = "is_deleted"
 UPDATE_BOOKMARK_PERIOD = 1000
 BOOKMARK_KEYS = {'log_file', 'log_pos', 'version', 'gtid'}
 
@@ -49,6 +50,10 @@ def add_automatic_properties(catalog_entry, columns):
     )
 
     columns.append(SDC_DELETED_AT)
+
+    catalog_entry.schema.properties[IS_DELETED] = Schema(type=["null", "integer"])
+
+    columns.append(IS_DELETED)
 
     return columns
 
@@ -529,6 +534,8 @@ def handle_delete_rows_event(event, catalog_entry, state, columns, rows_saved, t
 
         filtered_vals = {k: v for k, v in vals.items()
                          if k in columns}
+
+        filtered_vals[IS_DELETED] = 1
 
         record_message = row_to_singer_record(catalog_entry,
                                               stream_version,
